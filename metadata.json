@@ -1,0 +1,5 @@
+{
+  "name": "Wedding Finance Manager",
+  "description": "A comprehensive wedding budget and expense tracker designed to work with Supabase. Includes SQL generation for backend setup.",
+  "requestFramePermissions": []
+}
