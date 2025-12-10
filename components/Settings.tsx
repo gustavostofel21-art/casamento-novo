@@ -28,19 +28,71 @@ const Settings: React.FC = () => {
 
     const titulos = ['Noivo', 'Noiva', 'Padrinho', 'Madrinha', 'Cerimonialista', 'Pai/Mãe', 'Outro'];
 
+    const [systemUsers, setSystemUsers] = useState<any[]>([]);
+
     const fetchData = async () => {
         setLoading(true);
         const { data: invitesData } = await supabase.from('convites').select('*').order('created_at', { ascending: false });
-        const { data: profilesData } = await supabase.from('profiles').select('*');
+
+        // Tenta buscar via RPC (com emails)
+        const { data: usersData, error } = await supabase.rpc('get_users_list');
+
+        let usersToSet = [];
+
+        if (usersData && !error) {
+            usersToSet = usersData;
+        } else {
+            console.error('Erro ao buscar usuários via RPC:', error);
+            // Fallback: Busca via tabela profiles (sem email, mas permite gerenciar)
+            const { data: p } = await supabase.from('profiles').select('*');
+            if (p) {
+                usersToSet = p.map(profile => ({
+                    id: profile.id,
+                    nome: profile.nome,
+                    email: '', // Email indisponível no modo fallback
+                    titulo: profile.titulo,
+                    role: profile.role,
+                    status: profile.status || 'active'
+                }));
+            }
+        }
+
+        setSystemUsers(usersToSet);
 
         setInvites(invitesData || []);
-        setProfiles(profilesData || []);
         setLoading(false);
     };
 
     useEffect(() => {
         fetchData();
     }, []);
+
+    const handleToggleStatus = async (userId: string, currentStatus: string, userName: string) => {
+        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        const actionName = newStatus === 'active' ? 'ATIVAR' : 'INATIVAR';
+
+        if (!confirm(`Deseja realmente ${actionName} o acesso de "${userName}"?`)) {
+            return;
+        }
+
+        try {
+            const { error } = await supabase.rpc('admin_toggle_user_status', {
+                target_user_id: userId,
+                new_status: newStatus
+            });
+
+            if (error) throw error;
+
+            // Optimistic update
+            setSystemUsers(prev => prev.map(u =>
+                u.id === userId ? { ...u, status: newStatus } : u
+            ));
+
+        } catch (err: any) {
+            alert('Erro ao alterar status: ' + err.message);
+            fetchData(); // Rollback on error
+        }
+    };
 
     const handleCreateInvite = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -229,29 +281,45 @@ const Settings: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Equipe Ativa */}
+                {/* Equipe Ativa (Users List) */}
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <Shield size={20} className="text-olive-500" /> Equipe Ativa
+                        <Shield size={20} className="text-olive-500" /> Equipe Ativa (Gerenciar)
                     </h3>
 
                     <div className="space-y-4">
-                        {profiles.map(profile => (
-                            <div key={profile.id} className="flex items-center gap-4 p-4 rounded-xl bg-white border border-gray-100 hover:border-olive-200 transition-colors">
-                                <div className="w-10 h-10 rounded-full bg-olive-100 flex items-center justify-center text-olive-700 font-bold">
-                                    {profile.nome.charAt(0)}
+                        {systemUsers.length > 0 ? (
+                            systemUsers.map(user => (
+                                <div key={user.id} className={`flex items-center gap-4 p-4 rounded-xl border transition-all group ${user.status === 'inactive' ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 hover:border-olive-200'}`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${user.status === 'inactive' ? 'bg-gray-200 text-gray-500' : 'bg-olive-100 text-olive-700'}`}>
+                                        {(user.nome || user.email || 'U').charAt(0)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="font-bold text-gray-900 truncate">{user.nome || 'Sem Nome'}</h4>
+                                            {user.status === 'inactive' && (
+                                                <span className="px-2 py-0.5 rounded text-[10px] bg-gray-200 text-gray-600 font-bold uppercase">Inativo</span>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-gray-500 truncate">
+                                            {user.titulo || '-'} • <span className="capitalize">{user.role || 'user'}</span>
+                                        </p>
+                                        <p className="text-xs text-olive-400 truncate">{user.email}</p>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleToggleStatus(user.id, user.status || 'active', user.nome || user.email)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${user.status === 'inactive' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-red-500'}`}
+                                            title={user.status === 'inactive' ? 'Reativar Acesso' : 'Inativar Acesso'}
+                                        >
+                                            {user.status === 'inactive' ? 'Ativar' : 'Inativar'}
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <h4 className="font-bold text-gray-900">{profile.nome}</h4>
-                                    <p className="text-sm text-gray-500">{profile.titulo} • <span className="capitalize">{profile.role}</span></p>
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-xs text-gray-400 block">{profile.permissoes.length} acessos</span>
-                                </div>
-                            </div>
-                        ))}
-                        {profiles.length === 0 && (
-                            <p className="text-center text-gray-400 py-8">Nenhum usuário ativo encontrado.</p>
+                            ))
+                        ) : (
+                            <p className="text-center text-gray-400 py-8">Nenhum usuário ativo.</p>
                         )}
                     </div>
                 </div>

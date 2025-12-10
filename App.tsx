@@ -12,6 +12,7 @@ import Musics from './components/Musics';
 import Settings from './components/Settings';
 import InviteLanding from './components/InviteLanding';
 import Auth from './components/Auth';
+import LandingPage from './components/LandingPage';
 import {
   Heart,
   LayoutDashboard,
@@ -38,6 +39,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showAuth, setShowAuth] = useState(false); // Controls visibility of login screen
 
   // Verifica se é um acesso via link de convite
   const [inviteToken, setInviteToken] = useState<string | null>(null);
@@ -80,6 +82,7 @@ const App: React.FC = () => {
       setSession(session);
       if (session) {
         fetchUserProfile(session.user.id);
+        setShowAuth(false); // Esconde login ao autenticar
       } else {
         setUserProfile(null); // Limpa o perfil ao deslogar
       }
@@ -96,6 +99,12 @@ const App: React.FC = () => {
       .single();
 
     if (data) {
+      if (data.status === 'inactive') {
+        await supabase.auth.signOut();
+        alert('Seu acesso foi desativado pelo administrador.');
+        setSession(null);
+        return;
+      }
       setUserProfile(data);
     } else {
       // REDE DE SEGURANÇA:
@@ -195,7 +204,7 @@ const App: React.FC = () => {
     }
   };
 
-  // Se tiver token de convite, mostra a landing page
+  // Se tiver token de convite, mostra a landing page de convite (Fluxo legado ou específico)
   if (inviteToken) {
     return <InviteLanding token={inviteToken} onSuccess={() => {
       setInviteToken(null);
@@ -208,14 +217,35 @@ const App: React.FC = () => {
     return <div className="min-h-screen flex items-center justify-center bg-olive-50"><div className="animate-spin h-10 w-10 border-b-2 border-olive-600 rounded-full"></div></div>;
   }
 
-  if (!session) return <Auth />;
+  // LOGIC CHANGE: 
+  // If no session...
+  if (!session) {
+    // ...check if user wants to see Login screen
+    if (showAuth) {
+      return (
+        <div className="relative">
+          <button
+            onClick={() => setShowAuth(false)}
+            className="absolute top-4 left-4 p-2 text-olive-600 hover:text-olive-800 transition-colors z-50 flex items-center gap-2 font-bold"
+          >
+            ← Voltar para o Site
+          </button>
+          <Auth />
+        </div>
+      );
+    }
+    // ...otherwise show Public Landing Page
+    return <LandingPage onLoginClick={() => setShowAuth(true)} />;
+  }
+
+  // Se tem sessão, mostra o DASHBOARD (código original mantido)
 
   // Lógica de Permissões
   // Se não tiver profile, assume admin (acesso total)
   // Se for admin, acesso total
   // Se for user, filtra pelo array de permissoes
   const hasPermission = (tabId: string) => {
-    if (!userProfile) return false; // CORREÇÃO: Se não tiver perfil carregado, NÃO dá acesso
+    if (!userProfile) return false;
     if (userProfile.role === 'admin') return true;
     return userProfile.permissoes.includes(tabId);
   };

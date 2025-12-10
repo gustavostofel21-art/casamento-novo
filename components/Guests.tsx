@@ -135,23 +135,38 @@ const Guests: React.FC = () => {
   };
 
   // Cálculos de totais
-  const calculateTotalPeople = () => {
+  const stats = React.useMemo(() => {
     let total = 0;
-    guests.forEach(g => {
-      total += 1;
-      total += (g.acompanhantes_lista ? g.acompanhantes_lista.length : g.acompanhantes);
-    });
-    return total;
-  };
+    let confirmed = 0;
+    let adults = 0;
+    let children = 0;
 
-  const calculateConfirmed = () => {
-    let total = 0;
-    guests.filter(g => g.confirmado).forEach(g => {
-      total += 1; // Principal
-      total += (g.acompanhantes_lista ? g.acompanhantes_lista.length : g.acompanhantes);
+    guests.forEach(g => {
+      // Main guest (always counts as adult)
+      total += 1;
+      adults += 1;
+      if (g.confirmado) confirmed += 1;
+
+      // Companions
+      if (g.acompanhantes_lista) {
+        g.acompanhantes_lista.forEach(a => {
+          total += 1;
+          if (g.confirmado) confirmed += 1;
+
+          if (a.is_crianca) children += 1;
+          else adults += 1;
+        });
+      } else {
+        // Fallback legacy (assume adults)
+        const count = g.acompanhantes || 0;
+        total += count;
+        adults += count;
+        if (g.confirmado) confirmed += count;
+      }
     });
-    return total;
-  };
+
+    return { total, confirmed, adults, children };
+  }, [guests]);
 
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-20">
@@ -162,14 +177,22 @@ const Guests: React.FC = () => {
           <h2 className="text-2xl font-serif font-bold text-gray-800">Gerenciador de Convidados</h2>
           <p className="text-gray-500 text-sm">Controle de Lista e RSVP</p>
         </div>
-        <div className="flex gap-8">
-          <div className="text-center">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Total Pessoas</p>
-            <p className="text-3xl font-bold text-gray-900">{calculateTotalPeople()}</p>
+        <div className="flex gap-4 md:gap-8 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
+          <div className="text-center min-w-[80px]">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Pessoas</p>
+            <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
           </div>
-          <div className="text-center pl-8 border-l border-gray-100">
+          <div className="text-center pl-4 md:pl-8 border-l border-gray-100 min-w-[80px]">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Confirmados</p>
-            <p className="text-3xl font-bold text-olive-600">{calculateConfirmed()}</p>
+            <p className="text-3xl font-bold text-olive-600">{stats.confirmed}</p>
+          </div>
+          <div className="text-center pl-4 md:pl-8 border-l border-gray-100 min-w-[80px]">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide text-blue-600">Adultos</p>
+            <p className="text-3xl font-bold text-gray-700">{stats.adults}</p>
+          </div>
+          <div className="text-center pl-4 md:pl-8 border-l border-gray-100 min-w-[80px]">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide text-pink-500">Crianças</p>
+            <p className="text-3xl font-bold text-gray-700">{stats.children}</p>
           </div>
         </div>
       </div>
@@ -357,9 +380,9 @@ const Guests: React.FC = () => {
             <div className="p-5 border-b border-gray-100 bg-gradient-to-br from-white to-gray-50">
               <div className="flex justify-between items-start mb-2">
                 <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${guest.tipo_convidado === 'VIP' ? 'bg-amber-100 text-amber-700' :
-                    guest.tipo_convidado?.includes('Noiv') ? 'bg-rose-100 text-rose-700' :
-                      guest.tipo_convidado === 'Padrinho' || guest.tipo_convidado === 'Madrinha' ? 'bg-purple-100 text-purple-700' :
-                        'bg-gray-100 text-gray-600'
+                  guest.tipo_convidado?.includes('Noiv') ? 'bg-rose-100 text-rose-700' :
+                    guest.tipo_convidado === 'Padrinho' || guest.tipo_convidado === 'Madrinha' ? 'bg-purple-100 text-purple-700' :
+                      'bg-gray-100 text-gray-600'
                   }`}>
                   {guest.tipo_convidado || 'Comum'}
                 </span>
@@ -367,8 +390,8 @@ const Guests: React.FC = () => {
                 <button
                   onClick={() => toggleConfirm(guest)}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border ${guest.confirmado
-                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
-                      : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
+                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
+                    : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
                     }`}
                 >
                   {guest.confirmado ? <CheckCircle size={14} /> : <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300"></div>}

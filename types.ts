@@ -59,6 +59,7 @@ export interface Profile {
   titulo: string;
   permissoes: string[];
   role: 'admin' | 'user';
+  status?: 'active' | 'inactive';
 }
 
 export interface Convite {
@@ -89,4 +90,29 @@ export interface DashboardStats {
   totalPaid: number;
   remaining: number;
   percentagePaid: number;
+}
+
+export interface TimeLeft {
+  months: number;
+  days: number;
+  hours: number;
+  minutes: number;
+}
+
+export interface NavItem {
+  label: string;
+  href: string;
+}
+
+export interface GuestDetail {
+  name: string;
+  kinship: string;
+  isChild: boolean;
+}
+
+export interface FormData {
+  name: string;
+  guests: number;
+  guestDetails: GuestDetail[];
+  phone: string;
 }
