@@ -1,0 +1,36 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    # Roda às 08:00 da manhã a cada 6 dias
+    - cron: '0 8 */6 * *'
+  workflow_dispatch: # Permite rodar manualmente clicando num botão (para testar)
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acordar o Supabase (Bypass RLS)
+        run: |
+          # AQUI: Substitua 'NOME_DE_UMA_TABELA_REAL' pelo nome de uma tabela do seu banco.
+          # O parâmetro limit=1 garante que gastamos poucos recursos, lendo apenas 1 linha.
+          
+          TABELA="musicas"
+          
+          echo "Tentando acessar a tabela: $TABELA"
+
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/$TABELA?select=*&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE }}")
+
+          echo "Código de resposta do servidor: $RESPONSE"
+
+          if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ] || [ "$RESPONSE" -eq 204 ]; then
+            echo "✅ Sucesso! O banco respondeu e a inatividade foi resetada."
+          else
+            echo "⚠️ Atenção: Recebemos o código $RESPONSE."
+            echo "Verifique se o nome da tabela está correto no arquivo .yml"
+            # Não falhamos o script para não gerar spam de erro no seu email, 
+            # mas o log mostrará o aviso.
+          fi
