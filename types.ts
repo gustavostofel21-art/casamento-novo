@@ -26,14 +26,24 @@ export interface Fornecedor {
   telefone: string;
 }
 
+export interface Acompanhante {
+  id: string;
+  convidado_id: string;
+  nome: string;
+  parentesco: string;
+  is_crianca: boolean;
+}
+
 export interface Convidado {
   id: string;
   user_id: string;
   nome: string;
-  sobrenome: string;
-  lado: 'Noivo' | 'Noiva' | 'Padrinho' | 'Madrinha' | 'Comum';
-  acompanhantes: number;
+  sobrenome?: string; // Tornando opcional pois o novo form pede "nome completo"
+  telefone?: string;
+  tipo_convidado: string; // Renomeado de 'lado' para 'tipo_convidado', default 'Comum'
+  acompanhantes: number; // Quantidade declarada
   confirmado: boolean;
+  acompanhantes_lista?: Acompanhante[]; // Dados detalhados
 }
 
 export interface Musica {
