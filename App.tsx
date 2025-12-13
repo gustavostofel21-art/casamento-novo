@@ -32,7 +32,18 @@ import {
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
-  const [view, setView] = useState<ViewState>('dashboard');
+  const [view, setView] = useState<ViewState>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('wedding_app_view');
+      return (saved as ViewState) || 'dashboard';
+    }
+    return 'dashboard';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('wedding_app_view', view);
+  }, [view]);
+
   const [expenses, setExpenses] = useState<GastoView[]>([]);
   const [selectedExpense, setSelectedExpense] = useState<GastoView | null>(null);
   const [showSqlModal, setShowSqlModal] = useState(false);
@@ -40,6 +51,7 @@ const App: React.FC = () => {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false); // Controls visibility of login screen
+  const hasRedirected = React.useRef(false); // Prevents view reset on window focus
 
   // Verifica se é um acesso via link de convite
   const [inviteToken, setInviteToken] = useState<string | null>(null);
@@ -85,59 +97,95 @@ const App: React.FC = () => {
         setShowAuth(false); // Esconde login ao autenticar
       } else {
         setUserProfile(null); // Limpa o perfil ao deslogar
+        hasRedirected.current = false; // Allow redirect again on next login
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+  const fetchUserProfile = async (userId: string, retries = 3) => {
+    let currentData = null;
 
-    if (data) {
-      if (data.status === 'inactive') {
+    // Tenta buscar o perfil com retries simples
+    for (let i = 0; i < retries; i++) {
+      const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      if (data) {
+        currentData = data;
+        break;
+      }
+      // Espera um pouco antes de tentar de novo (útil para recém cadastrados via trigger)
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    if (currentData) {
+      if (currentData.status === 'inactive') {
         await supabase.auth.signOut();
         alert('Seu acesso foi desativado pelo administrador.');
         setSession(null);
         return;
       }
-      setUserProfile(data);
+      setUserProfile(currentData);
+
+      // REDIRECT LOGIC: Run only once per session/login to validate access
+      if (!hasRedirected.current) {
+        const tabs: ViewState[] = ['dashboard', 'gastos', 'fornecedores', 'convidados', 'roteiro', 'musicas'];
+
+        // Check if current view (from localStorage) is allowed
+        const isCurrentViewAllowed = currentData.role === 'admin' || (currentData.permissoes && currentData.permissoes.includes(view));
+
+        if (!isCurrentViewAllowed) {
+          // If not allowed, find the first allowed tab
+          const firstAllowed = tabs.find(tab => {
+            if (currentData.role === 'admin') return true;
+            return currentData.permissoes && currentData.permissoes.includes(tab);
+          });
+
+          if (firstAllowed) {
+            setView(firstAllowed);
+          }
+        }
+        hasRedirected.current = true;
+      }
+
     } else {
-      // REDE DE SEGURANÇA:
-      // Se não tem perfil, verificamos se é um usuário convidado que ficou "preso" (tem token nos metadados mas sem perfil)
+      // REDE DE SEGURANÇA (Mantida):
       const { data: { session } } = await supabase.auth.getSession();
       const inviteToken = session?.user?.user_metadata?.invite_token;
 
       if (inviteToken) {
         console.log("Tentando recuperar perfil via token de convite...", inviteToken);
-        // Tenta criar o perfil usando o token salvo nos metadados
         const { error: rpcError } = await supabase.rpc('register_profile_from_invite', {
           invite_token: inviteToken
         });
 
         if (!rpcError) {
-          // Se deu certo, busca o perfil novamente
           const { data: newData } = await supabase.from('profiles').select('*').eq('id', userId).single();
           if (newData) {
             setUserProfile(newData);
+            // Redirect for recovered user
+            if (!hasRedirected.current) {
+              const tabs: ViewState[] = ['dashboard', 'gastos', 'fornecedores', 'convidados', 'roteiro', 'musicas'];
+              const firstAllowed = tabs.find(tab => newData.role === 'admin' || (newData.permissoes && newData.permissoes.includes(tab)));
+              if (firstAllowed) setView(firstAllowed);
+              hasRedirected.current = true;
+            }
+
             setLoading(false);
             return;
           }
-        } else {
-          console.error("Erro ao tentar recuperar perfil:", rpcError);
         }
       }
 
-      // Se não for convite (ou falhar), tenta reivindicar acesso de proprietário (primeiro usuário)
       const { data: claimed } = await supabase.rpc('claim_owner_access');
-
       if (claimed) {
         const { data: newData } = await supabase.from('profiles').select('*').eq('id', userId).single();
-        if (newData) setUserProfile(newData);
+        if (newData) {
+          setUserProfile(newData);
+          if (newData.role === 'admin' || (newData.permissoes && newData.permissoes.includes('dashboard'))) {
+            setView('dashboard');
+          }
+        }
       } else {
         setUserProfile(null);
       }
@@ -368,9 +416,6 @@ const App: React.FC = () => {
         </div>
 
         <div className="mt-auto p-6 border-t border-olive-500/30 space-y-2">
-          <button onClick={() => setShowSqlModal(true)} className="flex items-center gap-2 text-xs font-semibold text-olive-200 hover:text-white transition-colors w-full p-2">
-            <Database size={14} /> <span>DB SETUP</span>
-          </button>
           <button onClick={() => supabase.auth.signOut()} className="flex items-center gap-2 text-xs font-semibold text-red-200 hover:text-red-100 transition-colors w-full p-2">
             <LogOut size={14} /> <span>SAIR</span>
           </button>
@@ -470,7 +515,7 @@ const App: React.FC = () => {
         )}
 
         {selectedExpense && <ExpenseDetail expense={selectedExpense} onClose={() => setSelectedExpense(null)} onUpdate={fetchExpenses} />}
-        <SqlSetupModal isOpen={showSqlModal} onClose={() => setShowSqlModal(false)} />
+        {/* <SqlSetupModal isOpen={showSqlModal} onClose={() => setShowSqlModal(false)} /> Removed DB Setup */}
       </main>
     </div>
   );

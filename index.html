@@ -1,72 +1,80 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wedding Planner - Organização Completa</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
-      <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              olive: {
-                50: '#f7f9f4',
-                100: '#ecf2e6',
-                200: '#d7e4cb',
-                300: '#b6cd9f',
-                400: '#90b073',
-                500: '#709353',
-                600: '#55753e', // Base Olive do novo design
-                700: '#435c33',
-                800: '#384a2d',
-                900: '#2f3d27',
-              },
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wedding Planner - Organização Completa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            olive: {
+              50: '#f7f9f4',
+              100: '#ecf2e6',
+              200: '#d7e4cb',
+              300: '#b6cd9f',
+              400: '#90b073',
+              500: '#709353',
+              600: '#55753e', // Base Olive do novo design
+              700: '#435c33',
+              800: '#384a2d',
+              900: '#2f3d27',
             },
-            fontFamily: {
-              serif: ['"Playfair Display"', 'serif'],
-              sans: ['"Lato"', 'sans-serif'],
-            },
-            animation: {
-              'fade-in-up': 'fadeInUp 1s ease-out forwards',
-              'fade-in': 'fadeIn 1.5s ease-out forwards',
-            },
-            keyframes: {
-              fadeInUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              },
-              fadeIn: {
-                '0%': { opacity: '0' },
-                '100%': { opacity: '1' },
-              }
-            }
           },
+          fontFamily: {
+            serif: ['"Playfair Display"', 'serif'],
+            sans: ['"Lato"', 'sans-serif'],
+          },
+          animation: {
+            'fade-in-up': 'fadeInUp 0.05s ease-out forwards',
+            'fade-in': 'fadeIn 0.05s ease-out forwards',
+          },
+          keyframes: {
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            }
+          }
         },
-      }
-    </script>
-    <style>
-      body {
-        background-color: #f7f9f2; /* Fundo Olive-50 */
-        color: #334155;
-      }
-      /* Custom scrollbar for better aesthetics */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #f1f1f1; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #dbe9c3; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #88b04b; 
-      }
-    </style>
+      },
+    }
+  </script>
+  <style>
+    body {
+      background-color: #f7f9f2;
+      /* Fundo Olive-50 */
+      color: #334155;
+    }
+
+    /* Custom scrollbar for better aesthetics */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #dbe9c3;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #88b04b;
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
@@ -79,10 +87,12 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/index.css">
 </head>
-  <body>
-    <div id="root"></div>
+
+<body>
+  <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>
