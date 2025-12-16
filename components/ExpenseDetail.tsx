@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GastoView, Pagamento } from '../types';
-import { X, Plus, DollarSign, FileText, Trash2 } from 'lucide-react';
+import { X, Plus, DollarSign, FileText, Trash2, Edit2, Check } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
 interface ExpenseDetailProps {
@@ -18,6 +18,10 @@ const ExpenseDetail: React.FC<ExpenseDetailProps> = ({ expense, onClose, onUpdat
     data_pagamento: new Date().toISOString().split('T')[0],
     observacao: ''
   });
+
+  // Estado para edição do valor total
+  const [isEditingTotal, setIsEditingTotal] = useState(false);
+  const [newTotalValue, setNewTotalValue] = useState(expense.valor_total_devido);
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -54,12 +58,32 @@ const ExpenseDetail: React.FC<ExpenseDetailProps> = ({ expense, onClose, onUpdat
     if (!error) { fetchPayments(); onUpdate(); }
   };
 
+  const handleUpdateTotal = async () => {
+    if (newTotalValue < 0) return;
+
+    const { error } = await supabase
+      .from('gastos')
+      .update({ valor_total_devido: newTotalValue })
+      .eq('id', expense.id);
+
+    if (error) {
+      alert('Erro ao atualizar valor total: ' + error.message);
+    } else {
+      setIsEditingTotal(false);
+      // Atualiza os dados locais/pai
+      onUpdate();
+      // Atualiza o objeto expense localmente para refletir na UI imediatamente se o onUpdate demorar
+      expense.valor_total_devido = newTotalValue;
+      expense.restante = newTotalValue - expense.total_pago;
+    }
+  };
+
   const percentPaid = Math.min(100, (expense.total_pago / expense.valor_total_devido) * 100);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-fade-in-up">
-        
+
         <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-olive-50">
           <div>
             <h2 className="text-2xl font-serif font-bold text-gray-900">{expense.fornecedor}</h2>
@@ -72,9 +96,36 @@ const ExpenseDetail: React.FC<ExpenseDetailProps> = ({ expense, onClose, onUpdat
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative group">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Devido</span>
-              <div className="text-xl font-bold text-slate-900 mt-1">R$ {expense.valor_total_devido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              {isEditingTotal ? (
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="number"
+                    value={newTotalValue}
+                    onChange={(e) => setNewTotalValue(Number(e.target.value))}
+                    className="w-full p-1 text-sm border border-gray-300 rounded focus:border-olive-500 focus:outline-none"
+                    autoFocus
+                  />
+                  <button onClick={handleUpdateTotal} className="p-1 bg-olive-100 text-olive-700 rounded hover:bg-olive-200" title="Salvar">
+                    <Check size={16} />
+                  </button>
+                  <button onClick={() => setIsEditingTotal(false)} className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200" title="Cancelar">
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between mt-1">
+                  <div className="text-xl font-bold text-slate-900">R$ {expense.valor_total_devido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                  <button
+                    onClick={() => { setNewTotalValue(expense.valor_total_devido); setIsEditingTotal(true); }}
+                    className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-olive-600 hover:bg-white rounded-full transition-all"
+                    title="Editar valor total"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="bg-olive-50 p-4 rounded-xl border border-olive-100">
               <span className="text-xs font-bold uppercase tracking-wider text-olive-600">Pago</span>
@@ -97,16 +148,16 @@ const ExpenseDetail: React.FC<ExpenseDetailProps> = ({ expense, onClose, onUpdat
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2"><FileText size={18} className="text-olive-600" /> Histórico</h3>
               <button onClick={() => setShowAddPayment(!showAddPayment)} className="text-sm bg-olive-100 text-olive-800 px-3 py-1.5 rounded-lg hover:bg-olive-200 font-bold transition-colors flex items-center gap-1">
-                {showAddPayment ? <X size={14}/> : <Plus size={14}/>} {showAddPayment ? 'Cancelar' : 'Add Parcela'}
+                {showAddPayment ? <X size={14} /> : <Plus size={14} />} {showAddPayment ? 'Cancelar' : 'Add Parcela'}
               </button>
             </div>
 
             {showAddPayment && (
               <form onSubmit={handleAddPayment} className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200 animate-fade-in-down grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label className="text-xs font-bold text-gray-500">Valor (R$)</label><input type="number" required min="0" step="0.01" value={newPayment.valor_pago} onChange={(e) => setNewPayment({...newPayment, valor_pago: Number(e.target.value)})} className="w-full p-2 rounded-lg border border-gray-300" /></div>
-                  <div><label className="text-xs font-bold text-gray-500">Data</label><input type="date" required value={newPayment.data_pagamento} onChange={(e) => setNewPayment({...newPayment, data_pagamento: e.target.value})} className="w-full p-2 rounded-lg border border-gray-300" /></div>
-                  <div className="md:col-span-2"><label className="text-xs font-bold text-gray-500">Obs</label><input type="text" value={newPayment.observacao} onChange={(e) => setNewPayment({...newPayment, observacao: e.target.value})} className="w-full p-2 rounded-lg border border-gray-300" placeholder="Ex: Entrada" /></div>
-                  <div className="md:col-span-2 flex justify-end"><button type="submit" className="bg-olive-600 text-white px-4 py-2 rounded-lg text-sm font-bold">Registrar</button></div>
+                <div><label className="text-xs font-bold text-gray-500">Valor (R$)</label><input type="number" required min="0" step="0.01" value={newPayment.valor_pago} onChange={(e) => setNewPayment({ ...newPayment, valor_pago: Number(e.target.value) })} className="w-full p-2 rounded-lg border border-gray-300" /></div>
+                <div><label className="text-xs font-bold text-gray-500">Data</label><input type="date" required value={newPayment.data_pagamento} onChange={(e) => setNewPayment({ ...newPayment, data_pagamento: e.target.value })} className="w-full p-2 rounded-lg border border-gray-300" /></div>
+                <div className="md:col-span-2"><label className="text-xs font-bold text-gray-500">Obs</label><input type="text" value={newPayment.observacao} onChange={(e) => setNewPayment({ ...newPayment, observacao: e.target.value })} className="w-full p-2 rounded-lg border border-gray-300" placeholder="Ex: Entrada" /></div>
+                <div className="md:col-span-2 flex justify-end"><button type="submit" className="bg-olive-600 text-white px-4 py-2 rounded-lg text-sm font-bold">Registrar</button></div>
               </form>
             )}
 
