@@ -19,7 +19,7 @@ const LocationMap: React.FC = () => {
             <div className="bg-olive-900 text-white p-8 text-center">
                 <p className="font-serif text-xl">Esperamos você lá!</p>
                 <button
-                    onClick={() => window.open('https://maps.app.goo.gl/XXXXX', '_blank')}
+                    onClick={() => window.open('https://share.google/PaOwz2odRH3aJF3Ez', '_blank')}
                     className="mt-4 text-olive-200 hover:text-white underline text-sm"
                 >
                     Abrir no Google Maps

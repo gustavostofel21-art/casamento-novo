@@ -37,8 +37,8 @@ const EventDetails: React.FC = () => {
                         <MapPin size={32} />
                     </div>
                     <h3 className="text-xl font-serif font-bold text-gray-800 mb-2">O Local</h3>
-                    <p className="text-gray-600">Sítio Recanto Mineiro</p>
-                    <p className="text-gray-400 text-sm">Mairiporã - SP</p>
+                    <p className="text-gray-600">Aki Ki Nóis Fica</p>
+                    <p className="text-gray-400 text-sm">Vassouras - RJ</p>
                 </div>
             </div>
         </Section>

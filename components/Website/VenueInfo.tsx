@@ -24,6 +24,8 @@ const VenueInfo: React.FC = () => {
                     <p className="text-gray-600 mb-6 leading-relaxed">
                         O {LOCATION_NAME} oferece comida caseira mineira deliciosa, ambiente rústico e acolhedor,
                         espaço ao ar livre, animais, passeio a cavalo e áreas perfeitas para registrar momentos especiais.
+                        <br /><br />
+                        <strong>Endereço:</strong> RJ 127 km 35 numero1307, Pocinhos - RJ, Vassouras - RJ, 27700-000
                     </p>
 
                     <div className="bg-olive-50 border-l-4 border-olive-500 p-4 mb-8">
@@ -49,23 +51,23 @@ const VenueInfo: React.FC = () => {
                 {/* Images Grid */}
                 <div className="grid grid-cols-2 gap-4">
                     <img
-                        src="https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=800&auto=format&fit=crop"
-                        alt="Comida Mineira"
+                        src="/images/RESTAURANTE (1).PNG"
+                        alt="Restaurante 1"
                         className="rounded-lg shadow-md h-48 w-full object-cover transform translate-y-4"
                     />
                     <img
-                        src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=800&auto=format&fit=crop"
-                        alt="Natureza"
+                        src="/images/RESTAURANTE (2).PNG"
+                        alt="Restaurante 2"
                         className="rounded-lg shadow-md h-48 w-full object-cover"
                     />
                     <img
-                        src="https://images.unsplash.com/photo-1505944357431-27579db47558?q=80&w=800&auto=format&fit=crop"
-                        alt="Ambiente Rústico"
+                        src="/images/RESTAURANTE (3).PNG"
+                        alt="Restaurante 3"
                         className="rounded-lg shadow-md h-48 w-full object-cover transform translate-y-4"
                     />
                     <img
-                        src="https://images.unsplash.com/photo-1533280385001-c32ff4e929b9?q=80&w=800&auto=format&fit=crop"
-                        alt="Detalhes"
+                        src="/images/RESTAURANTE (4).PNG"
+                        alt="Restaurante 4"
                         className="rounded-lg shadow-md h-48 w-full object-cover"
                     />
                 </div>
