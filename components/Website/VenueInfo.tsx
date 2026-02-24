@@ -32,7 +32,7 @@ const VenueInfo: React.FC = () => {
                         <p className="font-bold text-olive-800">Informação Importante:</p>
                         <p className="text-olive-700">
                             O restaurante funciona no formato self-service. <br />
-                            <span className="font-bold">Valor por quilo: R$ 9,90/kg.</span>
+                            <span className="font-bold">Valor: R$ 11,90 / 100g.</span>
                         </p>
                     </div>
 
