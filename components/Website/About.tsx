@@ -22,14 +22,33 @@ const About: React.FC = () => {
                     </p>
                 </div>
 
-                {/* User Photo */}
-                <div className="mt-12 w-full max-w-2xl overflow-hidden rounded-lg shadow-xl bg-gray-100">
-                    <img
-                        src="https://i.ibb.co/HTRjdZft/Whats-App-Image-2025-12-08-at-11-56-38.jpg"
-                        alt="Gustavo e Lívia"
-                        className="w-full h-auto max-h-[600px] object-cover hover:scale-105 transition-transform duration-700"
-                        style={{ objectPosition: 'center top' }}
-                    />
+                {/* Image Carousel */}
+                <div className="mt-12 w-full max-w-5xl overflow-hidden relative py-4">
+                    <style>{`
+                        @keyframes scroll {
+                            0% { transform: translateX(0); }
+                            100% { transform: translateX(-50%); }
+                        }
+                        .animate-scroll {
+                            display: flex;
+                            width: max-content;
+                            animation: scroll 30s linear infinite;
+                        }
+                        .animate-scroll:hover {
+                            animation-play-state: paused;
+                        }
+                    `}</style>
+                    <div className="animate-scroll gap-4">
+                        {[2, 3, 4, 5, 2, 3, 4, 5].map((num, idx) => (
+                            <div key={idx} className="h-[380px] md:h-[450px] flex-shrink-0">
+                                <img
+                                    src={`/images/${num}.jpg`}
+                                    alt={`Nossa História ${idx}`}
+                                    className="h-full w-auto object-cover rounded-xl shadow-lg"
+                                />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </Section>

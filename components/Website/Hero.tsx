@@ -22,13 +22,13 @@ const Hero: React.FC = () => {
             <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0 transition-opacity duration-1000"
                 style={{
-                    backgroundImage: 'url("https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80&w=2000&auto=format&fit=crop")',
-                    opacity: 0.8
+                    backgroundImage: 'url("/images/1.jpg")',
+                    opacity: 0.85
                 }}
             />
 
             {/* Soft gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/50 z-0"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70 z-0"></div>
 
             {/* Content */}
             <div className="relative z-10 p-4 text-white animate-fade-in-up">
