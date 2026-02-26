@@ -8,6 +8,7 @@ import LocationMap from './Website/LocationMap';
 import VenueInfo from './Website/VenueInfo';
 import RSVP from './Website/RSVP';
 import Footer from './Website/Footer';
+import LiveGallery from './Website/LiveGallery';
 import { Lock } from 'lucide-react';
 
 interface LandingPageProps {
@@ -24,6 +25,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
             <EventDetails />
             <LocationMap />
             <VenueInfo />
+            <LiveGallery />
             <RSVP />
 
             <div className="relative">

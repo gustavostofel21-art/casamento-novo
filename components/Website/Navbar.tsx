@@ -40,6 +40,7 @@ const Navbar: React.FC = () => {
         { name: 'O Casal', href: '#about' },
         { name: 'O Dia', href: '#details' },
         { name: 'Local', href: '#venue' },
+        { name: 'Ao Vivo', href: '#live-gallery' },
         { name: 'RSVP', href: '#rsvp' },
     ];
 
