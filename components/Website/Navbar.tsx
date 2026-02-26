@@ -50,9 +50,9 @@ const Navbar: React.FC = () => {
                 <a
                     href="#"
                     onClick={(e) => handleLinkClick(e, '#')}
-                    className={`font-serif text-2xl md:text-3xl font-bold transition-colors flex items-center ${scrolled ? 'text-olive-800' : 'text-white'}`}
+                    className={`font-cursive text-4xl md:text-5xl font-normal transition-colors flex items-center pt-2 ${scrolled ? 'text-olive-800' : 'text-white'}`}
                 >
-                    G <span className={`mx-1 font-serif italic font-light text-3xl ${scrolled ? 'text-olive-600' : 'text-olive-300'}`}>&</span> L
+                    G <span className={`mx-2 ${scrolled ? 'text-olive-600' : 'text-olive-300'}`}>e</span> L
                 </a>
 
                 {/* Desktop Menu */}

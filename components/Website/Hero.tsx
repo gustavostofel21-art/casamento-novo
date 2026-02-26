@@ -31,13 +31,13 @@ const Hero: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70 z-0"></div>
 
             {/* Content */}
-            <div className="relative z-10 p-4 text-white animate-fade-in-up">
-                <p className="text-lg md:text-xl tracking-widest mb-4 font-light uppercase text-olive-100">O Casamento de</p>
-                <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl mb-6 drop-shadow-lg flex flex-col md:block items-center justify-center">
-                    Gustavo <span className="text-olive-300 font-serif italic font-light mx-2 text-6xl md:text-8xl">&</span> Lívia
+            <div className="relative z-10 p-4 font-simonetta text-white animate-fade-in-up">
+                <p className="text-lg md:text-xl tracking-widest mb-4 uppercase text-olive-100">O Casamento de</p>
+                <h1 className="font-cursive text-7xl md:text-8xl lg:text-9xl mb-6 drop-shadow-lg flex flex-col md:block items-center justify-center font-normal">
+                    Gustavo <span className="text-olive-300 mx-2">e</span> Livia
                 </h1>
-                <p className="text-xl md:text-2xl font-light italic mb-2 max-w-2xl mx-auto drop-shadow-md">
-                    “Estamos muito felizes em compartilhar este momento tão especial com você!”
+                <p className="text-xl md:text-2xl italic mb-2 max-w-2xl mx-auto drop-shadow-md">
+                    Estamos muito felizes em compartilhar este momento tão especial com você!
                 </p>
                 <p className="text-md md:text-lg mb-10 opacity-90 max-w-xl mx-auto drop-shadow-md">
                     Prepare-se para viver um dia leve, simples e cheio de amor ao nosso lado.
