@@ -245,7 +245,8 @@ const LiveGallery: React.FC = () => {
                     <div className="bg-[#f3efdf]/60 border border-olive-200/50 text-olive-800 rounded-xl p-4 mb-8 max-w-xl mx-auto flex items-center gap-3 shadow-sm">
                         <Camera size={24} className="text-olive-500 shrink-0" />
                         <p className="text-sm font-medium text-left leading-snug">
-                            <strong>Atenção:</strong> Visando não sobrecarregarmos o sistema e a paciência do casal na hora de ver as fotos (risos), cada convidado poderá enviar no <strong>máximo {MAX_UPLOADS} fotos</strong>!
+                            Cada convidado poderá enviar no <strong>máximo {MAX_UPLOADS} fotos</strong>!<br />
+                            <span className="text-xs opacity-80 mt-1 block">A mensagem será exibida apenas para os noivos com muito carinho.</span>
                         </p>
                     </div>
                 )}

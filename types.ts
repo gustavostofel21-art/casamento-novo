@@ -84,7 +84,7 @@ export interface EventoRoteiro {
   musica?: Musica; // Para join
 }
 
-export type ViewState = 'dashboard' | 'gastos' | 'fornecedores' | 'convidados' | 'roteiro' | 'musicas' | 'galeria' | 'configuracoes';
+export type ViewState = 'dashboard' | 'gastos' | 'fornecedores' | 'convidados' | 'roteiro' | 'musicas' | 'galeria' | 'configuracoes' | 'transporte';
 
 export interface DashboardStats {
   totalBudget: number;
@@ -116,4 +116,19 @@ export interface FormData {
   guests: number;
   guestDetails: GuestDetail[];
   phone: string;
+}
+
+export interface Van {
+  id: string;
+  user_id: string;
+  capacidade: number;
+}
+
+export interface VanPassageiro {
+  id: string;
+  van_id: string;
+  convidado_id?: string;
+  acompanhante_id?: string;
+  convidados?: Convidado; // Para join
+  acompanhantes?: Acompanhante; // Para join
 }
