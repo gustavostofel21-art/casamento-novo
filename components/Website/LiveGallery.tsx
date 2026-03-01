@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Section from './Section';
 import { Camera, Image as ImageIcon, Upload, Loader2, User, MessageSquareHeart } from 'lucide-react';
+import Section from './Section';
 import { supabase } from '../../services/supabaseClient';
 import imageCompression from 'browser-image-compression';
+import Cropper from 'react-easy-crop';
+import { getCroppedImg } from './cropImage';
+import toast, { Toaster } from 'react-hot-toast';
 
 export interface CasamentoFoto {
     id: string;
@@ -21,12 +24,17 @@ const LiveGallery: React.FC = () => {
     const [mensagem, setMensagem] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [rawImageUrl, setRawImageUrl] = useState<string | null>(null);
+    const [showCropper, setShowCropper] = useState(false);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
     const fileInputRefCamera = useRef<HTMLInputElement>(null);
     const fileInputRefGallery = useRef<HTMLInputElement>(null);
 
     // Upload limit
-    const MAX_UPLOADS = 2;
+    const MAX_UPLOADS = 8;
     const [uploadCount, setUploadCount] = useState(0);
 
     useEffect(() => {
@@ -67,15 +75,32 @@ const LiveGallery: React.FC = () => {
 
         // Verifica se é imagem
         if (!file.type.startsWith('image/')) {
-            alert('Por favor, selecione apenas imagens ou tire uma foto.');
+            toast.error('Por favor, selecione apenas imagens ou tire uma foto.');
             return;
         }
 
-        setSelectedFile(file);
-
-        // Criar preview
+        // Em vez de selecionar direto, abre o cropper
         const objectUrl = URL.createObjectURL(file);
-        setPreviewUrl(objectUrl);
+        setRawImageUrl(objectUrl);
+        setShowCropper(true);
+
+        // Limpa o input no DOM pra permitir o recarregamento do mesmo arquivo na recusa
+        e.target.value = '';
+    };
+
+    const confirmCrop = async () => {
+        if (!rawImageUrl || !croppedAreaPixels) return;
+        try {
+            const croppedFile = await getCroppedImg(rawImageUrl, croppedAreaPixels);
+            if (croppedFile) {
+                setSelectedFile(croppedFile);
+                setPreviewUrl(URL.createObjectURL(croppedFile));
+            }
+            setShowCropper(false);
+        } catch (e) {
+            console.error(e);
+            toast.error('Erro ao cortar imagem');
+        }
     };
 
     const clearSelection = () => {
@@ -89,12 +114,12 @@ const LiveGallery: React.FC = () => {
         e.preventDefault();
 
         if (uploadCount >= MAX_UPLOADS) {
-            alert('Você já atingiu o limite de envio de fotos para este dispositivo. Muito obrigado por compartilhar!');
+            toast.error(`Você já atingiu o limite de envio de fotos (${MAX_UPLOADS}). Muito obrigado por compartilhar!`);
             return;
         }
 
         if (!selectedFile && !mensagem.trim()) {
-            alert('Por favor, adicione uma foto ou uma mensagem!');
+            toast.error('Por favor, adicione uma foto ou uma mensagem!');
             return;
         }
 
@@ -147,14 +172,16 @@ const LiveGallery: React.FC = () => {
             setUploadCount(newCount);
             localStorage.setItem('casamento_uploads_count', newCount.toString());
 
-            alert('Lembrança enviada com sucesso!');
+            toast.success('Lembrança enviada com sucesso!');
             setNome('');
             setMensagem('');
-            clearSelection();
+            setSelectedFile(null);
+            setPreviewUrl(null);
+            setRawImageUrl(null);
 
         } catch (error) {
             console.error('Erro ao fazer upload da lembrança:', error);
-            alert('Não foi possível enviar a lembrança. Tente novamente mais tarde.');
+            toast.error('Não foi possível enviar a lembrança. Tente novamente mais tarde.');
         } finally {
             setUploading(false);
             fetchFotos();
@@ -163,22 +190,62 @@ const LiveGallery: React.FC = () => {
 
     return (
         <Section id="live-gallery" bgColor="white" className="text-center">
+            {/* Adiciona o Toaster global para exibição dos alertas dessa seção */}
+            <Toaster
+                position="top-center"
+                toastOptions={{
+                    success: {
+                        style: {
+                            background: '#fff',
+                            color: '#4a583c', // Verde oliva escuro
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '16px',
+                            padding: '16px 24px',
+                            fontWeight: '600',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        },
+                        iconTheme: {
+                            primary: '#5c6b4b',
+                            secondary: '#fff',
+                        },
+                    },
+                    error: {
+                        style: {
+                            background: '#fff',
+                            color: '#b91c1c',
+                            border: '1px solid #fecaca',
+                            borderRadius: '16px',
+                            padding: '16px 24px',
+                            fontWeight: '600',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        },
+                    }
+                }}
+            />
+
             <div className="flex flex-col items-center">
                 <div className="text-olive-600 mb-4">
                     <Camera size={40} strokeWidth={1.5} />
                 </div>
                 <h2 className="text-3xl md:text-4xl font-simonetta text-gray-800 mb-4">
-                    Momentos ao Vivo
+                    Mural de Fotos
                 </h2>
                 <p className="max-w-2xl text-gray-600 text-lg px-4 mb-10">
                     Compartilhe uma lembrança especial e deixe uma mensagem surpresa para alegrar o mural de recordações.
                 </p>
 
-                {uploadCount >= MAX_UPLOADS && (
+                {uploadCount >= MAX_UPLOADS ? (
                     <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 mb-8 max-w-xl mx-auto flex items-center gap-3">
                         <ImageIcon size={24} className="text-amber-500 shrink-0" />
                         <p className="text-sm font-medium text-left">
                             <strong>Limite atingido!</strong> Você já enviou suas {MAX_UPLOADS} lembranças. Muito obrigado por participar deste momento especial conosco!
+                        </p>
+                    </div>
+                ) : (
+                    <div className="bg-[#f3efdf]/60 border border-olive-200/50 text-olive-800 rounded-xl p-4 mb-8 max-w-xl mx-auto flex items-center gap-3 shadow-sm">
+                        <Camera size={24} className="text-olive-500 shrink-0" />
+                        <p className="text-sm font-medium text-left leading-snug">
+                            <strong>Atenção:</strong> Visando não sobrecarregarmos o sistema e a paciência do casal na hora de ver as fotos (risos), cada convidado poderá enviar no <strong>máximo {MAX_UPLOADS} fotos</strong>!
                         </p>
                     </div>
                 )}
@@ -300,33 +367,67 @@ const LiveGallery: React.FC = () => {
                     </form>
                 </div>
 
-                {/* Gallery Grid (Pinterest Style) */}
+                {/* Gallery Grid (Slider 2 rows) */}
                 {fotos.filter(f => f.url).length > 0 ? (
-                    <div className="w-full max-w-6xl mx-auto columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 px-4">
-                        {fotos.filter(f => f.url).map(foto => (
-                            <div key={foto.id} className="break-inside-avoid overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 bg-white border border-gray-100 relative group">
-                                <img
-                                    src={foto.url}
-                                    alt="Momento do Casamento"
-                                    className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700"
-                                    loading="lazy"
-                                />
-                                {/* Nome do Autor sobre a foto */}
-                                {foto.nome && (
-                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pt-12 transform translate-y-2 group-hover:translate-y-0 transition-all">
-                                        <p className="text-white text-sm font-medium flex items-center gap-1.5 opacity-90 group-hover:opacity-100">
-                                            <User size={12} className="text-olive-200" /> {foto.nome}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                    <div className="w-full max-w-7xl mx-auto overflow-x-auto pb-8 snap-x snap-mandatory hide-scrollbar">
+                        <div className="grid grid-rows-2 grid-flow-col auto-cols-[75vw] sm:auto-cols-[300px] md:auto-cols-[350px] gap-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            {fotos.filter(f => f.url).map(foto => (
+                                <div key={foto.id} className="snap-center break-inside-avoid overflow-hidden rounded-3xl shadow-md hover:shadow-xl transition-all duration-500 bg-white border border-gray-100 relative group aspect-[9/11]">
+                                    <img
+                                        src={foto.url}
+                                        alt="Momento do Casamento"
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                        loading="lazy"
+                                    />
+                                    {/* Nome do Autor sobre a foto */}
+                                    {foto.nome && (
+                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pb-5 pt-16 transform translate-y-2 group-hover:translate-y-0 transition-all">
+                                            <p className="text-white text-sm font-bold flex items-center gap-2 opacity-90 group-hover:opacity-100 drop-shadow-md">
+                                                <User size={14} className="text-olive-200" /> {foto.nome}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 ) : (
                     <div className="w-full max-w-2xl mx-auto p-12 bg-white rounded-2xl border border-dashed border-gray-300 flex flex-col items-center">
                         <ImageIcon size={48} className="text-gray-300 mb-4" />
                         <p className="text-gray-500 text-lg">Ainda não há fotos no álbum...</p>
                         <p className="text-gray-400">Seja o primeiro a compartilhar uma foto e testar a galeria!</p>
+                    </div>
+                )}
+                {/* Cropper Modal */}
+                {showCropper && (
+                    <div className="fixed inset-0 z-[99999] bg-black bg-opacity-95 flex flex-col items-center justify-center animate-fade-in">
+                        <div className="relative w-full max-w-md h-[70vh] m-4 bg-gray-900 rounded-3xl overflow-hidden shadow-2xl">
+                            <Cropper
+                                image={rawImageUrl!}
+                                crop={crop}
+                                zoom={zoom}
+                                aspect={9 / 11}
+                                onCropChange={setCrop}
+                                onZoomChange={setZoom}
+                                onCropComplete={(_, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels as any)}
+                            />
+                        </div>
+                        <div className="w-full max-w-md p-4 flex justify-between gap-4">
+                            <button
+                                onClick={() => setShowCropper(false)}
+                                type="button"
+                                className="flex-1 bg-gray-800 text-white rounded-2xl py-4 font-bold tracking-wide hover:bg-gray-700 transition"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmCrop}
+                                type="button"
+                                className="flex-1 bg-olive-600 text-white rounded-2xl py-4 font-bold tracking-wide hover:bg-olive-700 transition"
+                            >
+                                Cortar Foto
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

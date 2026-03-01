@@ -96,9 +96,9 @@ const GalleryAdmin: React.FC = () => {
             {fotos.length > 0 ? (
                 <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
                     {fotos.map((foto) => (
-                        <div key={foto.id} className="relative group break-inside-avoid rounded-xl overflow-hidden shadow-sm border border-gray-200 bg-white flex flex-col">
-                            <div className="relative">
-                                <img src={foto.url} className="w-full h-auto object-cover" alt="Casamento log" loading="lazy" />
+                        <div key={foto.id} className="relative group break-inside-avoid rounded-3xl overflow-hidden shadow-sm border border-gray-200 bg-white flex flex-col">
+                            <div className="relative aspect-[9/11] w-full">
+                                <img src={foto.url} className="w-full h-full object-cover" alt="Casamento log" loading="lazy" />
 
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                                     <button
