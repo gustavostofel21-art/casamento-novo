@@ -3,13 +3,14 @@ import { supabase } from '../services/supabaseClient';
 import { Convidado, Acompanhante } from '../types';
 import {
   Plus, Trash2, Users, CheckCircle, XCircle, User, Phone,
-  ChevronDown, Smile, X, Baby
+  ChevronDown, Smile, X, Baby, Filter
 } from 'lucide-react';
 
 const Guests: React.FC = () => {
   const [guests, setGuests] = useState<Convidado[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'az' | 'za'>('oldest');
 
   // Form State
   const [formData, setFormData] = useState({
@@ -168,6 +169,20 @@ const Guests: React.FC = () => {
     return { total, confirmed, adults, children };
   }, [guests]);
 
+  const sortedGuests = React.useMemo(() => {
+    const sorted = [...guests];
+    if (sortBy === 'newest') {
+      sorted.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    } else if (sortBy === 'oldest') {
+      sorted.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+    } else if (sortBy === 'az') {
+      sorted.sort((a, b) => a.nome.localeCompare(b.nome));
+    } else if (sortBy === 'za') {
+      sorted.sort((a, b) => b.nome.localeCompare(a.nome));
+    }
+    return sorted;
+  }, [guests, sortBy]);
+
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-20">
 
@@ -198,11 +213,27 @@ const Guests: React.FC = () => {
       </div>
 
       {/* Action Bar */}
-      <div className="flex justify-between items-center bg-olive-50/50 p-4 rounded-xl border border-olive-100">
-        <p className="text-olive-700 font-bold ml-2">Famílias/Grupos: {guests.length}</p>
+      <div className="flex flex-col md:flex-row justify-between items-center bg-olive-50/50 p-4 rounded-xl border border-olive-100 mb-6 gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+          <p className="text-olive-700 font-bold sm:ml-2">Famílias/Grupos: {guests.length}</p>
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="pl-9 pr-8 py-2 bg-white border border-olive-200 rounded-lg text-sm font-medium text-olive-700 outline-none hover:border-olive-400 focus:border-olive-500 appearance-none transition-colors"
+            >
+              <option value="oldest">Mais Antigos ('Cadastrados')</option>
+              <option value="newest">Mais Novos ('Cadastrados')</option>
+              <option value="az">A - Z</option>
+              <option value="za">Z - A</option>
+            </select>
+            <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-olive-500" />
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-olive-500 pointer-events-none" />
+          </div>
+        </div>
         <button
           onClick={() => setShowAdd(!showAdd)}
-          className="bg-olive-600 text-white px-5 py-2.5 rounded-xl hover:bg-olive-700 flex items-center gap-3 shadow-lg shadow-olive-200 transition-all active:scale-95 font-bold"
+          className="bg-olive-600 text-white px-5 py-2.5 rounded-xl hover:bg-olive-700 flex items-center gap-3 shadow-lg shadow-olive-200 transition-all active:scale-95 font-bold w-full md:w-auto justify-center"
         >
           {showAdd ? <X size={20} /> : <Plus size={20} />}
           {showAdd ? 'Cancelar' : 'Adicionar Manualmente'}
@@ -373,7 +404,7 @@ const Guests: React.FC = () => {
 
       {/* GRID DE CARDS DAS FAMÍLIAS (MANTIDO INTACTO) */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {guests.map(guest => (
+        {sortedGuests.map(guest => (
           <div key={guest.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl hover:border-olive-300 transition-all duration-300 flex flex-col overflow-hidden group relative">
 
             {/* Header do Card (Convidado Principal) */}
@@ -451,8 +482,8 @@ const Guests: React.FC = () => {
 
             {/* Footer do Card */}
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-              <span className="text-[10px] text-gray-400 font-medium">
-                Cadastrado em {new Date().toLocaleDateString()}
+              <span className="text-[10px] text-gray-400 font-medium tracking-wider uppercase">
+                {guest.created_at ? new Date(guest.created_at).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'Data Indisponível'}
               </span>
               <button
                 onClick={() => deleteGuestGroup(guest.id)}

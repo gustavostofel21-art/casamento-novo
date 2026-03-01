@@ -44,6 +44,7 @@ export interface Convidado {
   acompanhantes: number; // Quantidade declarada
   confirmado: boolean;
   acompanhantes_lista?: Acompanhante[]; // Dados detalhados
+  created_at?: string;
 }
 
 export interface Musica {

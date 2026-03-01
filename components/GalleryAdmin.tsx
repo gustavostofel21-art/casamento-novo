@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { Camera, Trash2, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Camera, Trash2, Loader2, Image as ImageIcon, Download } from 'lucide-react';
 import { CasamentoFoto } from './Website/LiveGallery';
 
 const GalleryAdmin: React.FC = () => {
@@ -27,16 +27,21 @@ const GalleryAdmin: React.FC = () => {
     const handleDelete = async (foto: CasamentoFoto) => {
         if (!window.confirm("Certeza que deseja apagar esta foto permanentemente?")) return;
 
-        // Try to extraxt filename from URL (assumes standard supabase storage public url structure)
         try {
-            const urlParts = foto.url.split('/');
-            const fileName = urlParts[urlParts.length - 1];
+            // Extrai as partes corretas da URL, especificamente o que vem após "galeria_casamento/"
+            const urlString = new URL(foto.url);
+            const pathParts = urlString.pathname.split('galeria_casamento/');
+            if (pathParts.length > 1) {
+                const filePath = pathParts[1]; // Ex: "fotos/arquivo.jpg"
 
-            // Apaga do storage primeiro
-            if (fileName) {
-                await supabase.storage
+                // Apaga do storage primeiro
+                const { error: storageError } = await supabase.storage
                     .from('galeria_casamento')
-                    .remove([`fotos/${fileName}`]);
+                    .remove([filePath]);
+
+                if (storageError) {
+                    console.error("Erro no storage:", storageError.message);
+                }
             }
         } catch (e) {
             console.error("Erro ao tentar apagar do storage", e);
@@ -51,7 +56,26 @@ const GalleryAdmin: React.FC = () => {
         if (!error) {
             fetchFotos();
         } else {
-            alert('Erro ao apagar foto: ' + error.message);
+            alert('Erro ao apagar registro: ' + error.message);
+        }
+    };
+
+    const handleDownload = async (url: string, id: string) => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `foto_casamento_${id}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error("Erro ao baixar:", error);
+            alert("Não foi possível baixar a imagem. Apenas abra o link manualmente.");
         }
     };
 
@@ -72,17 +96,46 @@ const GalleryAdmin: React.FC = () => {
             {fotos.length > 0 ? (
                 <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
                     {fotos.map((foto) => (
-                        <div key={foto.id} className="relative group break-inside-avoid rounded-xl overflow-hidden shadow-sm border border-gray-200">
-                            <img src={foto.url} className="w-full h-auto object-cover" alt="Casamento log" loading="lazy" />
+                        <div key={foto.id} className="relative group break-inside-avoid rounded-xl overflow-hidden shadow-sm border border-gray-200 bg-white flex flex-col">
+                            <div className="relative">
+                                <img src={foto.url} className="w-full h-auto object-cover" alt="Casamento log" loading="lazy" />
 
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <button
-                                    onClick={() => handleDelete(foto)}
-                                    className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-full shadow-lg transform hover:scale-110 transition-transform"
-                                    title="Excluir Foto"
-                                >
-                                    <Trash2 size={24} />
-                                </button>
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                                    <button
+                                        onClick={() => handleDownload(foto.url, foto.id.substring(0, 5))}
+                                        className="bg-white hover:bg-gray-100 text-gray-800 p-3 rounded-full shadow-lg transform hover:scale-110 transition-transform"
+                                        title="Baixar Foto"
+                                    >
+                                        <Download size={22} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(foto)}
+                                        className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-full shadow-lg transform hover:scale-110 transition-transform"
+                                        title="Excluir Foto"
+                                    >
+                                        <Trash2 size={22} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Bloco de Mensagem */}
+                            <div className="p-4 border-t border-gray-100">
+                                {foto.nome ? (
+                                    <p className="text-sm font-bold text-gray-800 mb-1">
+                                        Enviado por: <span className="font-normal text-olive-600">{foto.nome}</span>
+                                    </p>
+                                ) : (
+                                    <p className="text-xs font-bold text-gray-400 mb-1">Anônimo</p>
+                                )}
+
+                                {foto.mensagem ? (
+                                    <div className="bg-gray-50 p-3 rounded-lg mt-2">
+                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Mensagem:</p>
+                                        <p className="text-sm text-gray-700 italic">"{foto.mensagem}"</p>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-gray-300 italic mt-2">Sem mensagem anexada</p>
+                                )}
                             </div>
                         </div>
                     ))}

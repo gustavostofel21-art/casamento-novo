@@ -44,3 +44,8 @@ ON CONFLICT (id) DO NOTHING;
 CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'galeria_casamento');
 CREATE POLICY "Public Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'galeria_casamento');
 
+-- ADDING NOME E MENSAGEM PARA O MURAL DE RECADOS DA GALERIA
+ALTER TABLE casamento_fotos 
+ADD COLUMN IF NOT EXISTS nome text,
+ADD COLUMN IF NOT EXISTS mensagem text;
+
