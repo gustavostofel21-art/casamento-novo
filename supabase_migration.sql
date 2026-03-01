@@ -50,3 +50,6 @@ ALTER TABLE casamento_fotos
 ADD COLUMN IF NOT EXISTS nome text,
 ADD COLUMN IF NOT EXISTS mensagem text;
 
+-- ENABLE REALTIME FOR casamento_fotos
+ALTER PUBLICATION supabase_realtime ADD TABLE casamento_fotos;
+
