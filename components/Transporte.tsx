@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { Bus, Users, UserPlus, Trash2, X, AlertCircle, Save } from 'lucide-react';
+import { Bus, Users, UserPlus, Trash2, X, AlertCircle, Save, Download } from 'lucide-react';
 import { Convidado, Van, VanPassageiro, Acompanhante } from '../types';
 import toast, { Toaster } from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type Person = {
     id: string; // Unique ID for list rendering (e.g. "c-xxx" or "a-xxx")
@@ -180,7 +182,7 @@ const Transporte: React.FC = () => {
             return;
         }
 
-        const payload = Array.from(selectedPersonIds).map(pid => {
+        const payload = Array.from(selectedPersonIds).map((pid: string) => {
             const isConvidado = pid.startsWith('c-');
             const idReal = pid.substring(2);
 
@@ -245,6 +247,42 @@ const Transporte: React.FC = () => {
     const seatsTotal = van ? van.capacidade : 0;
     const seatsUsed = passengers.length;
     const seatsAvailable = Math.max(0, seatsTotal - seatsUsed);
+
+    const downloadVanList = () => {
+        const doc = new jsPDF();
+        const tableColumn = ["#", "Nome", "Categoria", "Assinatura / Presença"];
+        const tableRows: any[] = [];
+        let count = 1;
+
+        passengers.forEach(p => {
+            const name = p.convidados ? `${p.convidados.nome} ${p.convidados.sobrenome || ''}`.trim() : `${p.acompanhantes?.nome}`;
+            const tag = p.convidados ? 'Convidado' : (p.acompanhantes?.is_crianca ? 'Acompanhante (-14)' : 'Acompanhante');
+
+            tableRows.push([count++, name, tag, '']);
+        });
+
+        autoTable(doc, {
+            head: [tableColumn],
+            body: tableRows,
+            startY: 25,
+            margin: { top: 25 }, // Avoid overlap with the title
+            theme: 'grid',
+            headStyles: { fillColor: [136, 176, 75] }, // Olive green matching the theme
+            didDrawPage: (data) => {
+                doc.setFontSize(14);
+                doc.text("Lista de Chamada do Transporte (Van)", 14, 15);
+            },
+            styles: { cellPadding: 4 },
+            columnStyles: {
+                0: { cellWidth: 12 }, // '#'
+                1: { cellWidth: 80 }, // 'Nome Completo'
+                2: { cellWidth: 45 }, // 'Categoria'
+                3: { cellWidth: 'auto' } // 'Assinatura'
+            }
+        });
+
+        doc.save("lista_de_chamada_transporte.pdf");
+    };
 
     if (loading) {
         return <div className="flex justify-center p-12"><div className="animate-spin h-8 w-8 border-b-2 border-olive-600 rounded-full"></div></div>;
@@ -325,13 +363,22 @@ const Transporte: React.FC = () => {
                                 <p className="text-sm text-gray-500 mt-1">Configure quem vai no transporte.</p>
                             </div>
 
-                            <button
-                                onClick={openAddModal}
-                                disabled={!van || seatsAvailable === 0}
-                                className="bg-olive-600 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 hover:bg-olive-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <UserPlus size={18} /> Adicionar Passageiro
-                            </button>
+                            <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0">
+                                <button
+                                    onClick={downloadVanList}
+                                    disabled={passengers.length === 0}
+                                    className="bg-white text-olive-700 border border-olive-200 px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-olive-50 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Download size={18} /> Baixar PDF
+                                </button>
+                                <button
+                                    onClick={openAddModal}
+                                    disabled={!van || seatsAvailable === 0}
+                                    className="bg-olive-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-olive-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-olive-200"
+                                >
+                                    <UserPlus size={18} /> Adicionar Passageiro
+                                </button>
+                            </div>
                         </div>
 
                         <div className="divide-y divide-gray-100 min-h-[300px]">

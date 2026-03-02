@@ -3,8 +3,10 @@ import { supabase } from '../services/supabaseClient';
 import { Convidado, Acompanhante } from '../types';
 import {
   Plus, Trash2, Users, CheckCircle, XCircle, User, Phone,
-  ChevronDown, Smile, X, Baby, Filter
+  ChevronDown, Smile, X, Baby, Filter, Download
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Guests: React.FC = () => {
   const [guests, setGuests] = useState<Convidado[]>([]);
@@ -183,6 +185,49 @@ const Guests: React.FC = () => {
     return sorted;
   }, [guests, sortBy]);
 
+  const downloadAttendanceList = () => {
+    const doc = new jsPDF();
+    const tableColumn = ["#", "Nome Completo", "Categoria", "Status", "Assinatura / Chegada"];
+    const tableRows: any[] = [];
+    let count = 1;
+
+    sortedGuests.forEach(g => {
+      const nomeGuest = `${g.nome} ${g.sobrenome || ''}`.trim();
+      const statusGuest = g.confirmado ? 'Confirmado' : 'Pendente';
+      tableRows.push([count++, nomeGuest, 'Convidado', statusGuest, '']); // Fixed category to Convidado
+
+      if (g.acompanhantes_lista) {
+        g.acompanhantes_lista.forEach(a => {
+          const tipoAcomp = a.is_crianca ? 'Acompanhante (-14)' : 'Acompanhante';
+          tableRows.push([count++, a.nome, tipoAcomp, statusGuest, '']);
+        });
+      }
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 25,
+      margin: { top: 25 }, // Ensures pagination also respects the title space
+      theme: 'grid',
+      headStyles: { fillColor: [136, 176, 75] }, // Olive green matching the theme
+      didDrawPage: (data) => {
+        doc.setFontSize(14);
+        doc.text("Lista de Chamada dos Convidados", 14, 15);
+      },
+      styles: { cellPadding: 4 },
+      columnStyles: {
+        0: { cellWidth: 12 }, // '#'
+        1: { cellWidth: 65 }, // 'Nome Completo'
+        2: { cellWidth: 45 }, // 'Categoria'
+        3: { cellWidth: 28 }, // 'Status'
+        4: { cellWidth: 'auto' } // 'Assinatura'
+      }
+    });
+
+    doc.save("lista_de_chamada_convidados.pdf");
+  };
+
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-20">
 
@@ -231,13 +276,22 @@ const Guests: React.FC = () => {
             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-olive-500 pointer-events-none" />
           </div>
         </div>
-        <button
-          onClick={() => setShowAdd(!showAdd)}
-          className="bg-olive-600 text-white px-5 py-2.5 rounded-xl hover:bg-olive-700 flex items-center gap-3 shadow-lg shadow-olive-200 transition-all active:scale-95 font-bold w-full md:w-auto justify-center"
-        >
-          {showAdd ? <X size={20} /> : <Plus size={20} />}
-          {showAdd ? 'Cancelar' : 'Adicionar Manualmente'}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <button
+            onClick={downloadAttendanceList}
+            className="bg-white text-olive-700 border border-olive-200 px-5 py-2.5 rounded-xl hover:bg-olive-50 flex items-center gap-2 shadow-sm transition-all font-bold w-full md:w-auto justify-center"
+          >
+            <Download size={20} />
+            Baixar PDF (Lista)
+          </button>
+          <button
+            onClick={() => setShowAdd(!showAdd)}
+            className="bg-olive-600 text-white px-5 py-2.5 rounded-xl hover:bg-olive-700 flex items-center gap-3 shadow-lg shadow-olive-200 transition-all active:scale-95 font-bold w-full md:w-auto justify-center"
+          >
+            {showAdd ? <X size={20} /> : <Plus size={20} />}
+            {showAdd ? 'Cancelar' : 'Adicionar Manualmente'}
+          </button>
+        </div>
       </div>
 
       {/* RESTORED PREMIUM FORM DESIGN */}

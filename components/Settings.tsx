@@ -23,7 +23,9 @@ const Settings: React.FC = () => {
         { id: 'fornecedores', label: 'Fornecedores' },
         { id: 'convidados', label: 'Lista de Convidados' },
         { id: 'roteiro', label: 'Roteiro' },
-        { id: 'musicas', label: 'Músicas' }
+        { id: 'musicas', label: 'Músicas' },
+        { id: 'galeria', label: 'Fotos (Ao Vivo)' },
+        { id: 'transporte', label: 'Transporte' }
     ];
 
     const titulos = ['Noivo', 'Noiva', 'Padrinho', 'Madrinha', 'Cerimonialista', 'Pai/Mãe', 'Outro'];
@@ -36,11 +38,15 @@ const Settings: React.FC = () => {
 
         // Tenta buscar via RPC (com emails)
         const { data: usersData, error } = await supabase.rpc('get_users_list');
+        const { data: profilesData } = await supabase.from('profiles').select('id, permissoes');
 
         let usersToSet = [];
 
         if (usersData && !error) {
-            usersToSet = usersData;
+            usersToSet = usersData.map((u: any) => {
+                const p = profilesData?.find(profile => profile.id === u.id);
+                return { ...u, permissoes: p?.permissoes || [] };
+            });
         } else {
             console.error('Erro ao buscar usuários via RPC:', error);
             // Fallback: Busca via tabela profiles (sem email, mas permite gerenciar)
@@ -52,7 +58,8 @@ const Settings: React.FC = () => {
                     email: '', // Email indisponível no modo fallback
                     titulo: profile.titulo,
                     role: profile.role,
-                    status: profile.status || 'active'
+                    status: profile.status || 'active',
+                    permissoes: profile.permissoes || []
                 }));
             }
         }
@@ -138,6 +145,29 @@ const Settings: React.FC = () => {
             if (exists) return { ...prev, permissoes: prev.permissoes.filter(p => p !== tabId) };
             return { ...prev, permissoes: [...prev.permissoes, tabId] };
         });
+    };
+
+    const [editingPermissions, setEditingPermissions] = useState<{ id: string, permissoes: string[] } | null>(null);
+
+    const toggleEditPermission = (tabId: string) => {
+        if (!editingPermissions) return;
+        setEditingPermissions(prev => {
+            if (!prev) return prev;
+            const exists = prev.permissoes.includes(tabId);
+            if (exists) return { ...prev, permissoes: prev.permissoes.filter(p => p !== tabId) };
+            return { ...prev, permissoes: [...prev.permissoes, tabId] };
+        });
+    };
+
+    const handleSavePermissions = async () => {
+        if (!editingPermissions) return;
+        const { error } = await supabase.from('profiles').update({ permissoes: editingPermissions.permissoes }).eq('id', editingPermissions.id);
+        if (error) {
+            alert('Erro ao salvar permissões: ' + error.message);
+        } else {
+            setEditingPermissions(null);
+            fetchData();
+        }
     };
 
     return (
@@ -290,32 +320,64 @@ const Settings: React.FC = () => {
                     <div className="space-y-4">
                         {systemUsers.length > 0 ? (
                             systemUsers.map(user => (
-                                <div key={user.id} className={`flex items-center gap-4 p-4 rounded-xl border transition-all group ${user.status === 'inactive' ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 hover:border-olive-200'}`}>
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${user.status === 'inactive' ? 'bg-gray-200 text-gray-500' : 'bg-olive-100 text-olive-700'}`}>
-                                        {(user.nome || user.email || 'U').charAt(0)}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <h4 className="font-bold text-gray-900 truncate">{user.nome || 'Sem Nome'}</h4>
-                                            {user.status === 'inactive' && (
-                                                <span className="px-2 py-0.5 rounded text-[10px] bg-gray-200 text-gray-600 font-bold uppercase">Inativo</span>
-                                            )}
+                                <div key={user.id} className={`flex flex-col p-4 rounded-xl border transition-all group ${user.status === 'inactive' ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 hover:border-olive-200'}`}>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${user.status === 'inactive' ? 'bg-gray-200 text-gray-500' : 'bg-olive-100 text-olive-700'}`}>
+                                            {(user.nome || user.email || 'U').charAt(0)}
                                         </div>
-                                        <p className="text-sm text-gray-500 truncate">
-                                            {user.titulo || '-'} • <span className="capitalize">{user.role || 'user'}</span>
-                                        </p>
-                                        <p className="text-xs text-olive-400 truncate">{user.email}</p>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="font-bold text-gray-900 truncate">{user.nome || 'Sem Nome'}</h4>
+                                                {user.status === 'inactive' && (
+                                                    <span className="px-2 py-0.5 rounded text-[10px] bg-gray-200 text-gray-600 font-bold uppercase">Inativo</span>
+                                                )}
+                                            </div>
+                                            <p className="text-sm text-gray-500 truncate">
+                                                {user.titulo || '-'} • <span className="capitalize">{user.role || 'user'}</span>
+                                            </p>
+                                            <p className="text-xs text-olive-400 truncate">{user.email}</p>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setEditingPermissions({ id: user.id, permissoes: user.permissoes || [] })}
+                                                className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-olive-100 text-olive-700 hover:bg-olive-200"
+                                                title="Editar Permissões"
+                                            >
+                                                Permissões
+                                            </button>
+                                            <button
+                                                onClick={() => handleToggleStatus(user.id, user.status || 'active', user.nome || user.email)}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${user.status === 'inactive' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-red-500'}`}
+                                                title={user.status === 'inactive' ? 'Reativar Acesso' : 'Inativar Acesso'}
+                                            >
+                                                {user.status === 'inactive' ? 'Ativar' : 'Inativar'}
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => handleToggleStatus(user.id, user.status || 'active', user.nome || user.email)}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${user.status === 'inactive' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-red-500'}`}
-                                            title={user.status === 'inactive' ? 'Reativar Acesso' : 'Inativar Acesso'}
-                                        >
-                                            {user.status === 'inactive' ? 'Ativar' : 'Inativar'}
-                                        </button>
-                                    </div>
+                                    {editingPermissions?.id === user.id && (
+                                        <div className="mt-4 pt-4 border-t border-gray-100 animate-slide-in">
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Editar Permissões de {user.nome}</label>
+                                            <div className="grid grid-cols-2 gap-2 mb-3">
+                                                {availableTabs.map(tab => (
+                                                    <label key={tab.id} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${editingPermissions.permissoes.includes(tab.id) ? 'bg-olive-50 border-olive-200 text-olive-800' : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'}`}>
+                                                        <input
+                                                            type="checkbox"
+                                                            className="w-3 h-3 text-olive-600 rounded focus:ring-olive-500"
+                                                            checked={editingPermissions.permissoes.includes(tab.id)}
+                                                            onChange={() => toggleEditPermission(tab.id)}
+                                                        />
+                                                        <span className="font-medium text-xs">{tab.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            <div className="flex justify-end gap-2">
+                                                <button onClick={() => setEditingPermissions(null)} className="px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-100 rounded-lg transition-colors font-medium">Cancelar</button>
+                                                <button onClick={handleSavePermissions} className="px-3 py-1.5 text-xs bg-olive-600 text-white rounded-lg hover:bg-olive-700 transition-colors shadow-sm font-medium">Salvar Permissões</button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))
                         ) : (
