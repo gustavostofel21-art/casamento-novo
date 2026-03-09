@@ -25,7 +25,8 @@ const Settings: React.FC = () => {
         { id: 'roteiro', label: 'Roteiro' },
         { id: 'musicas', label: 'Músicas' },
         { id: 'galeria', label: 'Fotos (Ao Vivo)' },
-        { id: 'transporte', label: 'Transporte' }
+        { id: 'transporte', label: 'Transporte' },
+        { id: 'presentes', label: 'Presentes' }
     ];
 
     const titulos = ['Noivo', 'Noiva', 'Padrinho', 'Madrinha', 'Cerimonialista', 'Pai/Mãe', 'Outro'];

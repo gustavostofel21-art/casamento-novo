@@ -84,7 +84,7 @@ export interface EventoRoteiro {
   musica?: Musica; // Para join
 }
 
-export type ViewState = 'dashboard' | 'gastos' | 'fornecedores' | 'convidados' | 'roteiro' | 'musicas' | 'galeria' | 'configuracoes' | 'transporte';
+export type ViewState = 'dashboard' | 'gastos' | 'fornecedores' | 'convidados' | 'roteiro' | 'musicas' | 'galeria' | 'configuracoes' | 'transporte' | 'presentes';
 
 export interface DashboardStats {
   totalBudget: number;
@@ -131,4 +131,26 @@ export interface VanPassageiro {
   acompanhante_id?: string;
   convidados?: Convidado; // Para join
   acompanhantes?: Acompanhante; // Para join
+}
+
+export interface Presente {
+  id: string;
+  titulo: string;
+  descricao?: string;
+  valor: number;
+  imagem_url?: string;
+  ativo: boolean;
+  created_at?: string;
+}
+
+export interface PresenteRecebido {
+  id: string;
+  presente_id: string;
+  nome_doador: string;
+  mensagem?: string;
+  valor_pago: number;
+  status: 'pendente' | 'pago';
+  stripe_session_id?: string;
+  created_at?: string;
+  presente?: Presente; // Para join
 }

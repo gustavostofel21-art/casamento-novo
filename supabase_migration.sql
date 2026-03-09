@@ -53,3 +53,39 @@ ADD COLUMN IF NOT EXISTS mensagem text;
 -- ENABLE REALTIME FOR casamento_fotos
 ALTER PUBLICATION supabase_realtime ADD TABLE casamento_fotos;
 
+-- CREATE GIFTS TABLES
+CREATE TABLE IF NOT EXISTS presentes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  titulo TEXT NOT NULL,
+  descricao TEXT,
+  valor NUMERIC NOT NULL,
+  imagem_url TEXT,
+  ativo BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS presentes_recebidos (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  presente_id UUID REFERENCES presentes(id) ON DELETE SET NULL,
+  nome_doador TEXT NOT NULL,
+  mensagem TEXT,
+  valor_pago NUMERIC NOT NULL,
+  status TEXT DEFAULT 'pendente',
+  stripe_session_id TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- INITIAL TEST DATA
+INSERT INTO presentes (titulo, valor) VALUES ('Ajude o noivo a matar a hpilory', 2.00);
+INSERT INTO presentes (titulo, valor) VALUES ('Ajude os noivos a irem pra lua de mel', 3.00);
+
+-- Enable RLS and Add Policies
+ALTER TABLE presentes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE presentes_recebidos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "gifts_allow_public_select_presentes" ON presentes FOR SELECT USING (true);
+CREATE POLICY "gifts_enable_all_auth_presentes" ON presentes FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "gifts_allow_public_insert_recebidos" ON presentes_recebidos FOR INSERT WITH CHECK (true);
+CREATE POLICY "gifts_allow_public_select_recebidos" ON presentes_recebidos FOR SELECT USING (true); 
+CREATE POLICY "gifts_enable_all_auth_recebidos" ON presentes_recebidos FOR ALL USING (auth.role() = 'authenticated');
