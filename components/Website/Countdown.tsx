@@ -11,48 +11,17 @@ const Countdown: React.FC = () => {
             const now = new Date();
             const target = new Date(WEDDING_DATE);
 
-            if (target <= now) {
+            if (target.getTime() <= now.getTime()) {
                 setTimeLeft({ months: 0, days: 0, hours: 0, minutes: 0 });
                 return;
             }
 
-            let years = target.getFullYear() - now.getFullYear();
-            let months = target.getMonth() - now.getMonth();
-            let days = target.getDate() - now.getDate();
-            let hours = target.getHours() - now.getHours();
-            let minutes = target.getMinutes() - now.getMinutes();
+            const diff = target.getTime() - now.getTime();
+            const totalDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const minutes = Math.floor((diff / (1000 * 60)) % 60);
 
-            // Adjust minutes
-            if (minutes < 0) {
-                minutes += 60;
-                hours--;
-            }
-
-            // Adjust hours
-            if (hours < 0) {
-                hours += 24;
-                days--;
-            }
-
-            // Adjust days
-            if (days < 0) {
-                // Get days in the previous month (relative to the target date)
-                // new Date(year, month, 0) gets the last day of the previous month
-                const previousMonth = new Date(target.getFullYear(), target.getMonth(), 0);
-                days += previousMonth.getDate();
-                months--;
-            }
-
-            // Adjust months
-            if (months < 0) {
-                months += 12;
-                years--;
-            }
-
-            // Combine years into months for the display format requested
-            const totalMonths = years * 12 + months;
-
-            setTimeLeft({ months: totalMonths, days, hours, minutes });
+            setTimeLeft({ months: 0, days: totalDays, hours, minutes });
         };
 
         calculateTimeLeft();
@@ -77,10 +46,9 @@ const Countdown: React.FC = () => {
                     Falta pouco para o grande dia!
                 </h2>
                 <div className="flex flex-wrap justify-center items-center">
-                    <TimeUnit value={timeLeft.months} label="Meses" />
-                    <TimeUnit value={timeLeft.days} label="Dias" />
-                    <TimeUnit value={timeLeft.hours} label="Horas" />
-                    <TimeUnit value={timeLeft.minutes} label="Minutos" />
+                    {timeLeft.days > 0 && <TimeUnit value={timeLeft.days} label={timeLeft.days === 1 ? 'Dia' : 'Dias'} />}
+                    {(timeLeft.days > 0 || timeLeft.hours > 0) && <TimeUnit value={timeLeft.hours} label={timeLeft.hours === 1 ? 'Hora' : 'Horas'} />}
+                    <TimeUnit value={timeLeft.minutes} label={timeLeft.minutes === 1 ? 'Minuto' : 'Minutos'} />
                 </div>
                 <p className="mt-8 text-olive-700 italic">
                     04 de Abril de 2026, às 10:00

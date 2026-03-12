@@ -150,7 +150,6 @@ export interface PresenteRecebido {
   mensagem?: string;
   valor_pago: number;
   status: 'pendente' | 'pago';
-  stripe_session_id?: string;
   created_at?: string;
   presente?: Presente; // Para join
 }
