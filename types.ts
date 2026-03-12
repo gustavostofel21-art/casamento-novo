@@ -84,7 +84,7 @@ export interface EventoRoteiro {
   musica?: Musica; // Para join
 }
 
-export type ViewState = 'dashboard' | 'gastos' | 'fornecedores' | 'convidados' | 'roteiro' | 'musicas' | 'galeria' | 'configuracoes' | 'transporte' | 'presentes';
+export type ViewState = 'dashboard' | 'gastos' | 'fornecedores' | 'convidados' | 'roteiro' | 'musicas' | 'galeria' | 'configuracoes' | 'transporte';
 
 export interface DashboardStats {
   totalBudget: number;

@@ -15,7 +15,6 @@ import Auth from './components/Auth';
 import LandingPage from './components/LandingPage';
 import GalleryAdmin from './components/GalleryAdmin';
 import Transporte from './components/Transporte';
-import PresentesAdmin from './components/PresentesAdmin';
 import {
   Heart,
   LayoutDashboard,
@@ -32,8 +31,7 @@ import {
   Settings as SettingsIcon,
   Menu,
   X,
-  Bus,
-  Gift
+  Bus
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -135,7 +133,7 @@ const App: React.FC = () => {
 
       // REDIRECT LOGIC: Run only once per session/login to validate access
       if (!hasRedirected.current) {
-        const tabs: ViewState[] = ['dashboard', 'gastos', 'fornecedores', 'convidados', 'roteiro', 'musicas', 'galeria', 'transporte', 'presentes'];
+        const tabs: ViewState[] = ['dashboard', 'gastos', 'fornecedores', 'convidados', 'roteiro', 'musicas', 'galeria', 'transporte'];
 
         // Check if current view (from localStorage) is allowed
         const isCurrentViewAllowed = currentData.role === 'admin' || (currentData.permissoes && currentData.permissoes.includes(view));
@@ -171,7 +169,7 @@ const App: React.FC = () => {
             setUserProfile(newData);
             // Redirect for recovered user
             if (!hasRedirected.current) {
-              const tabs: ViewState[] = ['dashboard', 'gastos', 'fornecedores', 'convidados', 'roteiro', 'musicas', 'galeria', 'transporte', 'presentes'];
+              const tabs: ViewState[] = ['dashboard', 'gastos', 'fornecedores', 'convidados', 'roteiro', 'musicas', 'galeria', 'transporte'];
               const firstAllowed = tabs.find(tab => newData.role === 'admin' || (newData.permissoes && newData.permissoes.includes(tab)));
               if (firstAllowed) setView(firstAllowed);
               hasRedirected.current = true;
@@ -384,7 +382,6 @@ const App: React.FC = () => {
           <NavItem id="musicas" icon={Music} label="Músicas" mobile />
           <NavItem id="galeria" icon={Camera} label="Fotos (Ao Vivo)" mobile />
           <NavItem id="transporte" icon={Bus} label="Transporte" mobile />
-          <NavItem id="presentes" icon={Gift} label="Presentes" mobile />
 
           {(!userProfile || userProfile.role === 'admin') && (
             <NavItem id="configuracoes" icon={SettingsIcon} label="Configurações" mobile />
@@ -418,7 +415,6 @@ const App: React.FC = () => {
             <NavItem id="musicas" icon={Music} label="Músicas" />
             <NavItem id="galeria" icon={Camera} label="Fotos (Ao Vivo)" />
             <NavItem id="transporte" icon={Bus} label="Transporte" />
-            <NavItem id="presentes" icon={Gift} label="Presentes" />
 
             {/* Configurações só aparece para admins ou quem não tem perfil (primeiro user) */}
             {(!userProfile || userProfile.role === 'admin') && (
@@ -468,7 +464,6 @@ const App: React.FC = () => {
             {view === 'musicas' && hasPermission('musicas') && <Musics />}
             {view === 'galeria' && hasPermission('galeria') && <GalleryAdmin />}
             {view === 'transporte' && hasPermission('transporte') && <Transporte />}
-            {view === 'presentes' && hasPermission('presentes') && <PresentesAdmin />}
             {view === 'configuracoes' && (!userProfile || userProfile.role === 'admin') && <Settings />}
 
             {view === 'gastos' && hasPermission('gastos') && (
